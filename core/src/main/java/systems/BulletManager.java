@@ -1,217 +1,123 @@
-package systems
-import com.badlogic.frontend.objects.BulletType;
-import com.badlogic.frontend.objects.bullets.Bullet;
+package systems;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import frontend.game.Bullet;
+import frontend.game.BulletType;
+import frontend.game.GameObject;
+import frontend.game.Item;
+import frontend.game.ItemType;
 
-import java.util.Queue;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 
 public class BulletManager {
-
     private Queue<Bullet> playerBulletPool;
     private Queue<Bullet> enemyBulletPool;
-
     private List<Bullet> activePlayerBullets;
     private List<Bullet> activeEnemyBullets;
 
-    private Texture playerBulletTexture;
-    private Texture enemyBulletTexture;
-
-    private TextureRegion playerBulletSprite;
-    private TextureRegion enemyBulletSprite;
-
     public BulletManager() {
-
         playerBulletPool = new LinkedList<>();
         enemyBulletPool = new LinkedList<>();
-
         activePlayerBullets = new ArrayList<>();
         activeEnemyBullets = new ArrayList<>();
-
-        playerBulletTexture = createBulletTexture(Color.YELLOW);
-        enemyBulletTexture = createBulletTexture(Color.RED);
-
-        playerBulletSprite =
-            new TextureRegion(playerBulletTexture);
-
-        enemyBulletSprite =
-            new TextureRegion(enemyBulletTexture);
     }
 
-    private Texture createBulletTexture(Color color) {
-
-        Pixmap pixmap = new Pixmap(
-            16, 16, Pixmap.Format.RGBA8888
-        );
-
-        pixmap.setColor(Color.CLEAR);
-        pixmap.fill();
-
-        pixmap.setColor(color);
-        pixmap.fillCircle(8, 8, 5);
-
-        Texture texture = new Texture(pixmap);
-
-        pixmap.dispose();
-
-        return texture;
-    }
-
-    public Bullet spawnPlayerBullet(
-        float x, float y,
-        float vx, float vy,
-        int damage) {
-
-        Bullet bullet = playerBulletPool.poll();
-
-        if (bullet == null) {
-            bullet = new Bullet(
-                x, y, BulletType.AMULET, damage
-            );
+    public Bullet spawnPlayerBullet(float x, float y, float vx, float vy, int damage) {
+        Bullet b;
+        if (!playerBulletPool.isEmpty()) {
+            b = playerBulletPool.poll();
+            b.init(x, y, vx, vy, BulletType.AMULET, damage, true);
+        } else {
+            b = new Bullet(x, y, BulletType.AMULET, damage);
+            b.init(x, y, vx, vy, BulletType.AMULET, damage, true);
+            TextureRegion sprite = AssetManager.getInstance().getTextureRegion("bullet_danmaku");
+            if (sprite != null) b.setSprite(sprite);
         }
-
-        bullet.init(
-            x, y, vx, vy,
-            BulletType.AMULET,
-            damage,
-            true
-        );
-
-        bullet.setSprite(playerBulletSprite);
-
-        activePlayerBullets.add(bullet);
-
-        return bullet;
+        activePlayerBullets.add(b);
+        return b;
     }
 
-    public Bullet spawnEnemyBullet(
-        float x, float y,
-        float vx, float vy,
-        int damage) {
-
-        Bullet bullet = enemyBulletPool.poll();
-
-        if (bullet == null) {
-            bullet = new Bullet(
-                x, y, BulletType.AMULET, damage
-            );
+    public Bullet spawnEnemyBullet(float x, float y, float vx, float vy, int damage) {
+        Bullet b;
+        if (!enemyBulletPool.isEmpty()) {
+            b = enemyBulletPool.poll();
+            b.init(x, y, vx, vy, BulletType.DANMAKU, damage, false);
+        } else {
+            b = new Bullet(x, y, BulletType.DANMAKU, damage);
+            b.init(x, y, vx, vy, BulletType.DANMAKU, damage, false);
+            TextureRegion sprite = AssetManager.getInstance().getTextureRegion("bullet_danmaku");
+            if (sprite != null) b.setSprite(sprite);
         }
-
-        bullet.init(
-            x, y, vx, vy,
-            BulletType.AMULET,
-            damage,
-            false
-        );
-
-        bullet.setSprite(enemyBulletSprite);
-
-        activeEnemyBullets.add(bullet);
-
-        return bullet;
+        activeEnemyBullets.add(b);
+        return b;
     }
 
-    public void updateAndRecycle(
-        float delta,
-        float screenWidth,
-        float screenHeight) {
-
-        recycleBullets(
-            activePlayerBullets,
-            playerBulletPool,
-            delta,
-            screenWidth,
-            screenHeight
-        );
-
-        recycleBullets(
-            activeEnemyBullets,
-            enemyBulletPool,
-            delta,
-            screenWidth,
-            screenHeight
-        );
-    }
-
-    private void recycleBullets(
-        List<Bullet> activeBullets,
-        Queue<Bullet> pool,
-        float delta,
-        float screenWidth,
-        float screenHeight) {
-
-        Iterator<Bullet> iterator = activeBullets.iterator();
-
-        while (iterator.hasNext()) {
-
-            Bullet bullet = iterator.next();
-
-            if (!bullet.isDestroyed()) {
-                bullet.update(delta);
+    public void update(float delta) {
+        for (int i = activePlayerBullets.size() - 1; i >= 0; i--) {
+            Bullet b = activePlayerBullets.get(i);
+            b.update(delta);
+            if (b.isDestroyed() || b.isOffScreen(800, 600)) {
+                b.destroy();
+                activePlayerBullets.remove(i);
+                playerBulletPool.offer(b);
             }
+        }
 
-            if (bullet.isDestroyed()
-                || bullet.isOffScreen(
-                screenWidth,
-                screenHeight
-            )) {
-
-                bullet.destroy();
-
-                iterator.remove();
-
-                pool.offer(bullet);
+        for (int i = activeEnemyBullets.size() - 1; i >= 0; i--) {
+            Bullet b = activeEnemyBullets.get(i);
+            b.update(delta);
+            if (b.isDestroyed() || b.isOffScreen(800, 600)) {
+                b.destroy();
+                activeEnemyBullets.remove(i);
+                enemyBulletPool.offer(b);
             }
         }
     }
 
     public void render(SpriteBatch batch) {
-
         for (Bullet b : activePlayerBullets) {
-            if (!b.isDestroyed()) {
-                b.render(batch);
-            }
+            if (!b.isDestroyed()) b.render(batch);
         }
-
         for (Bullet b : activeEnemyBullets) {
-            if (!b.isDestroyed()) {
-                b.render(batch);
+            if (!b.isDestroyed()) b.render(batch);
+        }
+    }
+
+    public void clearEnemyBullets(List<GameObject> entities) {
+        Iterator<Bullet> iter = activeEnemyBullets.iterator();
+        while (iter.hasNext()) {
+            Bullet bullet = iter.next();
+            if (entities != null) {
+                Item pointDrop = EntityFactory.createItem(bullet.getX(), bullet.getY(), ItemType.POINT);
+                entities.add(pointDrop);
             }
+            bullet.destroy();
+            iter.remove();
+            enemyBulletPool.offer(bullet);
         }
     }
 
-    public List<Bullet> getActivePlayerBullets() {
-        return activePlayerBullets;
+    public void clearEnemyBullets() {
+        clearEnemyBullets(null);
     }
 
-    public List<Bullet> getActiveEnemyBullets() {
-        return activeEnemyBullets;
-    }
-
-    public int getPlayerPoolSize() {
-        return playerBulletPool.size();
-    }
-
-    public int getEnemyPoolSize() {
-        return enemyBulletPool.size();
-    }
-
-    public void dispose() {
-
-        if (playerBulletTexture != null) {
-            playerBulletTexture.dispose();
-        }
-
-        if (enemyBulletTexture != null) {
-            enemyBulletTexture.dispose();
+    public void clearPlayerBullets() {
+        Iterator<Bullet> pIter = activePlayerBullets.iterator();
+        while (pIter.hasNext()) {
+            Bullet bullet = pIter.next();
+            bullet.destroy();
+            pIter.remove();
+            playerBulletPool.offer(bullet);
         }
     }
+
+    public List<Bullet> getActivePlayerBullets() { return activePlayerBullets; }
+    public List<Bullet> getActiveEnemyBullets() { return activeEnemyBullets; }
+    public int getPlayerPoolSize() { return playerBulletPool.size(); }
+    public int getEnemyPoolSize() { return enemyBulletPool.size(); }
 }

@@ -33,14 +33,8 @@ public class Enemy extends GameObject {
             this.hp = 0;
         }
 
-        System.out.println(name + " took " + damage + " damage! HP: " + this.hp + "/" + this.maxHp);
-
         if (wasAlive && this.hp == 0) {
-            System.out.println(name + " was defeated!");
-
-
             AudioManager.getInstance().playSFX("sfx_enemy_die.mp3");
-
             destroy();
             return true;
         }
@@ -48,6 +42,10 @@ public class Enemy extends GameObject {
     }
 
     public boolean isAlive() {
-        return hp > 0;
+        return hp > 0 && !isDestroyed();
+    }
+
+    public long getScoreValue() {
+        return scoreValue;
     }
 }

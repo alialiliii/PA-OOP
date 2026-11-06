@@ -2,17 +2,16 @@ package systems;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import frontend.game.Player;
+import frontend.game.Boss;
 import frontend.game.Bullet;
 import frontend.game.BulletType;
-import frontend.game.Boss;
 import frontend.game.Fairy;
 import frontend.game.Item;
 import frontend.game.ItemType;
+import frontend.game.Player;
 
 public class EntityFactory {
 
-    // Create a Player and assign the 'player_idle' animation from AssetManager
     public static Player createPlayer(float x, float y, String name, int hp, int power, int spellCards) {
         Player player = new Player(x, y, name, hp, power, spellCards);
         Animation<TextureRegion> anim = AssetManager.getInstance().getAnimation("player_idle");
@@ -20,7 +19,20 @@ public class EntityFactory {
         return player;
     }
 
-    // Create an Item and assign its sprite from AssetManager based on ItemType
+    public static Fairy createFairy(float x, float y, String name, int hp) {
+        Fairy fairy = new Fairy(x, y, name, hp);
+        Animation<TextureRegion> anim = AssetManager.getInstance().getAnimation("fairy_idle");
+        fairy.setAnimation(anim);
+        return fairy;
+    }
+
+    public static Boss createBoss(float x, float y, String name, int hp) {
+        Boss boss = new Boss(x, y, name, hp);
+        Animation<TextureRegion> anim = AssetManager.getInstance().getAnimation("boss_idle");
+        boss.setAnimation(anim);
+        return boss;
+    }
+
     public static Item createItem(float x, float y, ItemType itemType) {
         Item item = new Item(x, y, itemType);
         String key = switch (itemType) {
@@ -34,7 +46,6 @@ public class EntityFactory {
         return item;
     }
 
-    // Create an enemy bullet (type DANMAKU, speed 0f, sprite bullet_danmaku)
     public static Bullet createEnemyBullet(float x, float y, int damage) {
         Bullet bullet = new Bullet(x, y, 0f, BulletType.DANMAKU, damage);
         TextureRegion sprite = AssetManager.getInstance().getTextureRegion("bullet_danmaku");
